@@ -1,32 +1,46 @@
-RELATÓRIO DE TESTES – GERADOR DINÂMICO DE FUNÇÕES
+# Test Report
 
-Aluno: Leonardo Dana Edelsberg
-Matrícula: 2510515
+## Dynamic Function Generator
 
-1. Objetivo
+This document describes the tests performed to validate the implementation of `cria_func`, a runtime function generator for **Linux x86-64**.
 
-O objetivo dos testes foi validar a implementação da função cria_func para Linux x86-64, verificando a geração dinâmica de código para funções com até três parâmetros, incluindo parâmetros repassados, fixos e indiretos, tanto para inteiros quanto para ponteiros.
+The implementation supports functions with up to three parameters and handles:
 
-2. Teste Inicial
+* `PARAM` — argument received by the generated function
+* `FIX` — argument fixed when the function is generated
+* `IND` — argument loaded indirectly from a memory address
 
-Função utilizada:
+Both integer (`INT_PAR`) and pointer (`PTR_PAR`) parameters were tested.
 
+---
+
+## 1. Basic Parameter Test
+
+### Function
+
+```c
 int id(int x)
 {
-return x;
+    return x;
 }
+```
 
-Configuração:
+### Configuration
 
+```c
 params[0].tipo_val = INT_PAR;
 params[0].orig_val = PARAM;
+```
 
-Chamada:
+### Call
 
+```c
 f_id(i);
+```
 
-Resultado obtido:
+### Output
 
+```text
 1
 2
 3
@@ -37,27 +51,41 @@ Resultado obtido:
 8
 9
 10
+```
 
-Conclusão:
+### Result
 
-O código gerado executa corretamente uma chamada indireta para a função original, preservando o valor de retorno.
+The generated code correctly performs an indirect call to the original function while preserving its return value.
 
-3. Teste de Parâmetro Fixo (FIX)
+---
 
-Função utilizada:
+## 2. Fixed Integer Parameter (`FIX`)
 
+### Function
+
+```c
 int mult(int x, int y)
 {
-return x * y;
+    return x * y;
 }
+```
 
-Configuração:
+### Configuration
 
+```text
 params[0] = PARAM
 params[1] = FIX(10)
+```
 
-Resultado obtido:
+The generated function therefore behaves approximately as:
 
+```text
+f(x) → mult(x, 10)
+```
+
+### Output
+
+```text
 10
 20
 30
@@ -68,161 +96,229 @@ Resultado obtido:
 80
 90
 100
+```
 
-Conclusão:
+### Result
 
-Parâmetros inteiros fixos estão sendo carregados corretamente.
+Fixed integer parameters are loaded correctly.
 
-4. Teste de Remapeamento de Registradores
+---
 
-Função utilizada:
+## 3. Register Remapping
 
+### Function
+
+```c
 int soma3(int a, int b, int c)
 {
-return a + b + c;
+    return a + b + c;
 }
+```
 
-Configuração:
+### Configuration
 
+```text
 params[0] = PARAM
 params[1] = FIX(100)
 params[2] = PARAM
+```
 
-Chamada:
+### Call
 
-f_soma(1,2,3);
+```c
+f_soma(1, 2, 3);
+```
 
-A função gerada deveria chamar:
+The generated function should call:
 
-soma3(1,100,2)
+```c
+soma3(1, 100, 2);
+```
 
-Resultado obtido:
+### Output
 
+```text
 103
+```
 
-Conclusão:
+### Result
 
-O remapeamento dos registradores de parâmetros está correto.
+The parameter registers are correctly remapped before calling the original function.
 
-5. Teste de Ponteiro Fixo (PTR_PAR + FIX)
+---
 
-Função utilizada:
+## 4. Fixed Pointer (`PTR_PAR + FIX`)
 
+### Function
+
+```c
 int tamanho(char *s)
 {
-return strlen(s);
+    return strlen(s);
 }
+```
 
-Configuração:
+### Configuration
 
+```c
 params[0].tipo_val = PTR_PAR;
 params[0].orig_val = FIX;
 params[0].valor.v_ptr = "abcdef";
+```
 
-Resultado obtido:
+### Output
 
+```text
 6
+```
 
-Conclusão:
+### Result
 
-Ponteiros fixos são carregados corretamente.
+Fixed pointer parameters are loaded correctly.
 
-6. Teste de Ponteiro Indireto (PTR_PAR + IND)
+---
 
-Função utilizada:
+## 5. Indirect Pointer (`PTR_PAR + IND`)
 
+### Function
+
+```c
 int tamanho(char *s)
 {
-return strlen(s);
+    return strlen(s);
 }
+```
 
-Configuração:
+### Configuration
 
+```c
 char *str = "hello";
 
 params[0].tipo_val = PTR_PAR;
 params[0].orig_val = IND;
 params[0].valor.v_ptr = &str;
+```
 
-Resultado obtido:
+### Initial Output
 
+```text
 5
+```
 
-Após alterar:
+After changing:
 
+```c
 str = "abcdefghij";
+```
 
-Resultado obtido:
+the generated function returns:
 
+```text
 10
+```
 
-Conclusão:
+### Result
 
-O valor corrente armazenado no endereço informado é carregado corretamente a cada chamada.
+The generated function correctly loads the current value stored at the specified memory address on every call.
 
-7. Teste com strcmp
+---
 
-Função utilizada:
+## 6. Fixed and Forwarded Pointer Parameters (`strcmp`)
 
+### Function
+
+```c
 int compara(char *a, char *b)
 {
-return strcmp(a,b);
+    return strcmp(a, b);
 }
+```
 
-Configuração:
+### Configuration
 
+```text
 params[0] = FIX("abcdef")
 params[1] = PARAM
+```
 
-Resultados obtidos:
+### Output
 
+```text
 0
 -23
+```
 
-Interpretação:
+### Interpretation
 
-strcmp retorna:
+`strcmp` returns:
 
-0 quando as strings são iguais;
-valor negativo quando a primeira string é lexicograficamente menor.
+* `0` when both strings are equal
+* a negative value when the first string is lexicographically smaller
 
-Conclusão:
+### Result
 
-Parâmetros ponteiro fixos e parâmetros ponteiro recebidos pela função gerada estão funcionando corretamente.
+Fixed pointer parameters and pointer parameters received by the generated function work correctly.
 
-8. Teste de Inteiro Indireto (INT_PAR + IND)
+---
 
-Função utilizada:
+## 7. Indirect Integer (`INT_PAR + IND`)
 
+### Function
+
+```c
 int id(int x)
 {
-return x;
+    return x;
 }
+```
 
-Configuração:
+### Configuration
 
+```c
 int x = 50;
 
 params[0].tipo_val = INT_PAR;
 params[0].orig_val = IND;
 params[0].valor.v_ptr = &x;
+```
 
-Primeira chamada:
+### Initial Output
 
+```text
 50
+```
 
-Após:
+After changing:
 
+```c
 x = 123;
+```
 
-Segunda chamada:
+the generated function returns:
 
+```text
 123
+```
 
-Conclusão:
+### Result
 
-A implementação carrega corretamente o valor inteiro armazenado no endereço fornecido.
+The implementation correctly loads the current integer value stored at the provided memory address.
 
-9. Conclusão
+---
 
-A implementação gera corretamente código de máquina para Linux x86-64, suportando até três parâmetros e as três formas de obtenção de argumentos especificadas pelo enunciado (PARAM, FIX e IND).
+## Conclusion
+
+The implementation successfully generates machine code at runtime for **Linux x86-64**.
+
+The tests validate:
+
+* Forwarded parameters (`PARAM`)
+* Fixed parameters (`FIX`)
+* Indirect parameters (`IND`)
+* Integer parameters
+* Pointer parameters
+* Register remapping
+* Calls to the original function
+* Preservation of return values
+
+The generated functions correctly configure their arguments and invoke the original target function according to the tested configurations.
