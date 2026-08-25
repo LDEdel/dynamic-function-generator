@@ -1,0 +1,17 @@
+# Compiled files
+*.o
+*.out
+*.exe
+
+# Generated binaries
+test
+teste
+
+# Debug files
+*.dSYM/
+core
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
