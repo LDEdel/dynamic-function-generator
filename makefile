@@ -5,7 +5,7 @@ TARGET = test
 SRC = src/cria_func.c tests/test.c
 
 all:
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
+	$(CC) $(CFLAGS) $(SRC) -z execstack -o $(TARGET)
 
 test: all
 	./$(TARGET)
