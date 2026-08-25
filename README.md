@@ -98,4 +98,4 @@ docs/test-report.md
 
 ## Academic context
 
-Originally developed as a Software Básico university assignment.
+Originally developed as a Basic Software university assignment.
